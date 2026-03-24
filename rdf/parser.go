@@ -1,3 +1,4 @@
+// Package rdf provides RDF/OWL ontology parsing functionality.
 package rdf
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/soypete/ontology-go/types"
 )
 
+// Parser defines the interface for parsing RDF formats into triples.
 type Parser interface {
 	Parse(r io.Reader) ([]types.Triple, error)
 }

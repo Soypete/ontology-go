@@ -1,3 +1,4 @@
+// Package query provides SPARQL query execution against a triple store.
 package query
 
 import (

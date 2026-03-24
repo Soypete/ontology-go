@@ -1,3 +1,4 @@
+// Package ttl provides W3C Turtle format parsing functionality.
 package ttl
 
 import (

@@ -4,7 +4,14 @@ This file provides guidance for AI agents working in this repository.
 
 ## Repository Overview
 
-This is a Go library for parsing and analyzing RDF/OWL/TTL ontology files. The code is located in the `pkg/rdf` directory.
+This is a Go library for parsing and analyzing RDF/OWL/TTL ontology files. The module is `github.com/soypete/ontology-go` with packages in the root directory: `rdf`, `store`, `sparql`, `ttl`, `fetch`, `types`.
+
+## TBOX/ABOX Mapping
+
+This library supports mapping relational data to RDF triples using YAML configuration:
+
+- **TBOX**: Schema-level mappings defining predicates and class types
+- **ABOX**: Instance-level mappings generating individual triples from database rows
 
 ## Build, Lint, and Test Commands
 
