@@ -1,0 +1,83 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix edu:  <https://ontology.data.schoolai.dev/edu#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+# Classes
+edu:Person a owl:Class ;
+    rdfs:label "Person"@en ;
+    rdfs:comment "A person involved in education" .
+
+edu:Student a owl:Class ;
+    rdfs:subClassOf edu:Person ;
+    rdfs:label "Student"@en .
+
+edu:Instructor a owl:Class ;
+    rdfs:subClassOf edu:Person ;
+    rdfs:label "Instructor"@en .
+
+edu:Course a owl:Class ;
+    rdfs:label "Course"@en ;
+    rdfs:comment """A structured learning experience
+with lessons and assessments.""" .
+
+edu:Lesson a owl:Class ;
+    rdfs:label "Lesson"@en .
+
+# Properties
+edu:enrolledIn a owl:ObjectProperty ;
+    rdfs:domain edu:Student ;
+    rdfs:range edu:Course .
+
+edu:teaches a owl:ObjectProperty ;
+    rdfs:domain edu:Instructor ;
+    rdfs:range edu:Course .
+
+edu:hasLesson a owl:ObjectProperty ;
+    rdfs:domain edu:Course ;
+    rdfs:range edu:Lesson .
+
+edu:difficulty a owl:DatatypeProperty ;
+    rdfs:domain edu:Course ;
+    rdfs:range xsd:string .
+
+edu:score a owl:DatatypeProperty ;
+    rdfs:domain edu:Student ;
+    rdfs:range xsd:integer .
+
+# Instances
+edu:alice a edu:Student ;
+    foaf:name "Alice Smith" ;
+    edu:enrolledIn edu:go101 ;
+    edu:score "95"^^xsd:integer .
+
+edu:bob a edu:Instructor ;
+    foaf:name "Bob Jones" ;
+    edu:teaches edu:go101, edu:python101 .
+
+edu:go101 a edu:Course ;
+    rdfs:label "Introduction to Go" ;
+    edu:difficulty "beginner" ;
+    edu:hasLesson edu:go101_lesson1, edu:go101_lesson2 .
+
+edu:python101 a edu:Course ;
+    rdfs:label "Introduction to Python" ;
+    edu:difficulty "beginner" .
+
+edu:go101_lesson1 a edu:Lesson ;
+    rdfs:label "Hello World in Go" .
+
+edu:go101_lesson2 a edu:Lesson ;
+    rdfs:label "Variables and Types" .
+
+# Blank node example: union of Student and Instructor
+edu:Participant a owl:Class ;
+    owl:unionOf _:union1 .
+
+_:union1 rdf:first edu:Student ;
+    rdf:rest _:union2 .
+
+_:union2 rdf:first edu:Instructor ;
+    rdf:rest rdf:nil .

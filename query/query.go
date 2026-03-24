@@ -1,0 +1,262 @@
+package query
+
+import (
+	"fmt"
+	"regexp"
+	"strings"
+
+	"github.com/soypete/ontology-go/store"
+	"github.com/soypete/ontology-go/types"
+)
+
+// Engine executes SPARQL queries against a triple store.
+type Engine struct {
+	store store.Store
+}
+
+// NewEngine creates a new SPARQL query engine.
+func NewEngine(s store.Store) *Engine {
+	return &Engine{store: s}
+}
+
+// Execute parses and executes a SPARQL query string, returning a QueryResult.
+func (e *Engine) Execute(sparql string) (*types.QueryResult, error) {
+	q, err := Parse(sparql)
+	if err != nil {
+		return nil, fmt.Errorf("sparql parse error: %w", err)
+	}
+
+	return e.ExecuteParsed(q)
+}
+
+// ExecuteParsed executes a pre-parsed query against the store.
+func (e *Engine) ExecuteParsed(q *ParsedQuery) (*types.QueryResult, error) {
+	if q.Type != QuerySelect {
+		return nil, fmt.Errorf("only SELECT queries are supported")
+	}
+
+	allTriples := e.store.All()
+
+	// Match the basic graph pattern
+	bindings, matchedTriples, path := matchBGP(q.Where, allTriples)
+
+	// Apply OPTIONAL patterns
+	for _, optPatterns := range q.Optional {
+		bindings = applyOptional(bindings, optPatterns, allTriples)
+	}
+
+	// Apply FILTERs
+	for _, f := range q.Filters {
+		bindings = applyFilter(bindings, f)
+	}
+
+	// Apply DISTINCT
+	if q.Distinct {
+		bindings = distinct(bindings, q.Variables)
+	}
+
+	// Apply OFFSET
+	if q.Offset > 0 && q.Offset < len(bindings) {
+		bindings = bindings[q.Offset:]
+	} else if q.Offset >= len(bindings) {
+		bindings = nil
+	}
+
+	// Apply LIMIT
+	if q.Limit > 0 && len(bindings) > q.Limit {
+		bindings = bindings[:q.Limit]
+	}
+
+	// Project to selected variables
+	projected := make([]map[string]string, 0, len(bindings))
+	for _, binding := range bindings {
+		row := make(map[string]string)
+		for _, v := range q.Variables {
+			if val, ok := binding[v]; ok {
+				row[v] = val
+			}
+		}
+		projected = append(projected, row)
+	}
+
+	return &types.QueryResult{
+		Bindings: projected,
+		Triples:  matchedTriples,
+		Path:     path,
+	}, nil
+}
+
+// matchBGP evaluates a basic graph pattern against triples.
+// Returns bindings, matched triples, and the traversal path.
+func matchBGP(patterns []TriplePattern, triples []types.Triple) ([]map[string]string, []types.Triple, []string) {
+	if len(patterns) == 0 {
+		return []map[string]string{{}}, nil, nil
+	}
+
+	bindings := []map[string]string{{}}
+	var matchedTriples []types.Triple
+	var path []string
+	seen := make(map[string]bool) // deduplicate matched triples
+
+	for _, pattern := range patterns {
+		var newBindings []map[string]string
+
+		for _, binding := range bindings {
+			for _, triple := range triples {
+				newBinding := tryMatch(pattern, triple, binding)
+				if newBinding != nil {
+					newBindings = append(newBindings, newBinding)
+
+					// Track matched triple
+					key := triple.Subject + "|" + triple.Predicate + "|" + triple.Object
+					if !seen[key] {
+						seen[key] = true
+						matchedTriples = append(matchedTriples, triple)
+						path = append(path, triple.Subject, triple.Predicate, triple.Object)
+					}
+				}
+			}
+		}
+
+		bindings = newBindings
+		if len(bindings) == 0 {
+			break
+		}
+	}
+
+	return bindings, matchedTriples, path
+}
+
+// applyOptional adds bindings from OPTIONAL patterns.
+// Existing bindings that don't match are kept with unbound optional variables.
+func applyOptional(bindings []map[string]string, patterns []TriplePattern, triples []types.Triple) []map[string]string {
+	var result []map[string]string
+
+	for _, binding := range bindings {
+		optBindings := []map[string]string{copyBinding(binding)}
+
+		matched := false
+		for _, pattern := range patterns {
+			var newBindings []map[string]string
+			for _, b := range optBindings {
+				for _, triple := range triples {
+					nb := tryMatch(pattern, triple, b)
+					if nb != nil {
+						newBindings = append(newBindings, nb)
+						matched = true
+					}
+				}
+			}
+			if len(newBindings) > 0 {
+				optBindings = newBindings
+			}
+		}
+
+		if matched {
+			result = append(result, optBindings...)
+		} else {
+			// OPTIONAL didn't match — keep original binding
+			result = append(result, binding)
+		}
+	}
+
+	return result
+}
+
+// tryMatch attempts to match a triple pattern against a triple, extending the binding.
+// Returns nil if the match fails.
+func tryMatch(pattern TriplePattern, triple types.Triple, binding map[string]string) map[string]string {
+	nb := copyBinding(binding)
+
+	if !matchTerm(pattern.Subject, triple.Subject, nb) {
+		return nil
+	}
+	if !matchTerm(pattern.Predicate, triple.Predicate, nb) {
+		return nil
+	}
+	if !matchTerm(pattern.Object, triple.Object, nb) {
+		return nil
+	}
+
+	return nb
+}
+
+// matchTerm matches a pattern term against a concrete value, updating bindings.
+func matchTerm(term, value string, binding map[string]string) bool {
+	if isVariable(term) {
+		varName := term[1:]
+		if existing, ok := binding[varName]; ok {
+			return existing == value
+		}
+		binding[varName] = value
+		return true
+	}
+	return term == value
+}
+
+// applyFilter filters bindings based on a filter condition.
+func applyFilter(bindings []map[string]string, f Filter) []map[string]string {
+	var result []map[string]string
+	for _, binding := range bindings {
+		if evaluateFilter(f, binding) {
+			result = append(result, binding)
+		}
+	}
+	return result
+}
+
+func evaluateFilter(f Filter, binding map[string]string) bool {
+	left := resolveValue(f.Left, binding)
+	right := f.Right
+
+	switch f.Op {
+	case FilterEquals:
+		return left == right
+	case FilterNotEquals:
+		return left != right
+	case FilterRegex:
+		matched, _ := regexp.MatchString(right, left)
+		return matched
+	default:
+		return true
+	}
+}
+
+func resolveValue(term string, binding map[string]string) string {
+	if isVariable(term) {
+		return binding[term[1:]]
+	}
+	// Strip quotes from string literals
+	if strings.HasPrefix(term, "\"") && strings.HasSuffix(term, "\"") {
+		return term[1 : len(term)-1]
+	}
+	return term
+}
+
+// distinct removes duplicate result rows based on the projected variables.
+func distinct(bindings []map[string]string, variables []string) []map[string]string {
+	seen := make(map[string]bool)
+	var result []map[string]string
+
+	for _, binding := range bindings {
+		var parts []string
+		for _, v := range variables {
+			parts = append(parts, binding[v])
+		}
+		key := strings.Join(parts, "\x00")
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, binding)
+		}
+	}
+
+	return result
+}
+
+func copyBinding(b map[string]string) map[string]string {
+	nb := make(map[string]string, len(b))
+	for k, v := range b {
+		nb[k] = v
+	}
+	return nb
+}

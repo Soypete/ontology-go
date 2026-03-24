@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+  xmlns:schema="http://schema.org/"
+  xmlns:wdt="http://www.wikidata.org/prop/direct/"
+  xmlns:wd="http://www.wikidata.org/entity/"
+  xmlns:skos="http://www.w3.org/2004/02/skos/core#"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+>
+
+  <!-- Q42: Douglas Adams -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q42">
+    <rdf:type rdf:resource="http://www.wikidata.org/entity/Q5"/>
+    <rdfs:label xml:lang="en">Douglas Adams</rdfs:label>
+    <schema:description xml:lang="en">English author and humourist (1952–2001)</schema:description>
+    <skos:altLabel xml:lang="en">Douglas Noel Adams</skos:altLabel>
+    <wdt:P31 rdf:resource="http://www.wikidata.org/entity/Q5"/>
+    <wdt:P21 rdf:resource="http://www.wikidata.org/entity/Q6581097"/>
+    <wdt:P27 rdf:resource="http://www.wikidata.org/entity/Q145"/>
+    <wdt:P569 rdf:datatype="http://www.w3.org/2001/XMLSchema#date">1952-03-11</wdt:P569>
+    <wdt:P570 rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2001-05-11</wdt:P570>
+    <wdt:P19 rdf:resource="http://www.wikidata.org/entity/Q350"/>
+    <wdt:P20 rdf:resource="http://www.wikidata.org/entity/Q159288"/>
+    <wdt:P106 rdf:resource="http://www.wikidata.org/entity/Q36180"/>
+    <wdt:P106 rdf:resource="http://www.wikidata.org/entity/Q4853732"/>
+    <wdt:P106 rdf:resource="http://www.wikidata.org/entity/Q28389"/>
+    <wdt:P800 rdf:resource="http://www.wikidata.org/entity/Q25169"/>
+  </rdf:Description>
+
+  <!-- Q5: human -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q5">
+    <rdfs:label xml:lang="en">human</rdfs:label>
+    <schema:description xml:lang="en">common name of Homo sapiens</schema:description>
+  </rdf:Description>
+
+  <!-- Q6581097: male -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q6581097">
+    <rdfs:label xml:lang="en">male</rdfs:label>
+  </rdf:Description>
+
+  <!-- Q145: United Kingdom -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q145">
+    <rdfs:label xml:lang="en">United Kingdom</rdfs:label>
+    <rdf:type rdf:resource="http://www.wikidata.org/entity/Q6256"/>
+    <schema:description xml:lang="en">country in Western Europe</schema:description>
+  </rdf:Description>
+
+  <!-- Q350: Cambridge -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q350">
+    <rdfs:label xml:lang="en">Cambridge</rdfs:label>
+    <rdf:type rdf:resource="http://www.wikidata.org/entity/Q515"/>
+    <schema:description xml:lang="en">city and non-metropolitan district in England</schema:description>
+    <wdt:P17 rdf:resource="http://www.wikidata.org/entity/Q145"/>
+  </rdf:Description>
+
+  <!-- Q159288: Santa Barbara -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q159288">
+    <rdfs:label xml:lang="en">Santa Barbara</rdfs:label>
+    <rdf:type rdf:resource="http://www.wikidata.org/entity/Q515"/>
+    <schema:description xml:lang="en">city in California, United States</schema:description>
+  </rdf:Description>
+
+  <!-- Q36180: writer -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q36180">
+    <rdfs:label xml:lang="en">writer</rdfs:label>
+    <schema:description xml:lang="en">person who uses written words to communicate ideas and to produce works of literature</schema:description>
+  </rdf:Description>
+
+  <!-- Q4853732: comedian -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q4853732">
+    <rdfs:label xml:lang="en">comedic writer</rdfs:label>
+  </rdf:Description>
+
+  <!-- Q28389: screenwriter -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q28389">
+    <rdfs:label xml:lang="en">screenwriter</rdfs:label>
+    <schema:description xml:lang="en">person who writes screenplays</schema:description>
+  </rdf:Description>
+
+  <!-- Q25169: The Hitchhiker's Guide to the Galaxy -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q25169">
+    <rdfs:label xml:lang="en">The Hitchhiker's Guide to the Galaxy</rdfs:label>
+    <rdf:type rdf:resource="http://www.wikidata.org/entity/Q7725634"/>
+    <schema:description xml:lang="en">novel by Douglas Adams</schema:description>
+    <wdt:P50 rdf:resource="http://www.wikidata.org/entity/Q42"/>
+    <wdt:P577 rdf:datatype="http://www.w3.org/2001/XMLSchema#date">1979-10-12</wdt:P577>
+    <wdt:P136 rdf:resource="http://www.wikidata.org/entity/Q24925"/>
+  </rdf:Description>
+
+  <!-- Q24925: science fiction -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q24925">
+    <rdfs:label xml:lang="en">science fiction</rdfs:label>
+    <schema:description xml:lang="en">genre of speculative fiction</schema:description>
+  </rdf:Description>
+
+  <!-- Q6256: country -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q6256">
+    <rdfs:label xml:lang="en">country</rdfs:label>
+  </rdf:Description>
+
+  <!-- Q515: city -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q515">
+    <rdfs:label xml:lang="en">city</rdfs:label>
+  </rdf:Description>
+
+  <!-- Q7725634: literary work -->
+  <rdf:Description rdf:about="http://www.wikidata.org/entity/Q7725634">
+    <rdfs:label xml:lang="en">literary work</rdfs:label>
+  </rdf:Description>
+
+</rdf:RDF>
