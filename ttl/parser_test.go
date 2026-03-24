@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/soypete/ontology-go/rdf"
+	"github.com/soypete/ontology-go/types"
 )
 
 func TestTurtleParser_PrefixAndBasicTriple(t *testing.T) {
@@ -540,5 +541,88 @@ ex:test ex:value "42"^^<http://www.w3.org/2001/XMLSchema#integer> .
 	}
 	if triples[0].Object != "42" {
 		t.Errorf("object = %q, want 42", triples[0].Object)
+	}
+}
+
+func TestTurtleParser_EmptyCollection(t *testing.T) {
+	input := `@prefix ex: <http://example.org/> . ex:empty a ex:EmptyCollection . ex:empty ex:items () .`
+	p := NewTurtleParser()
+	triples, err := p.Parse(strings.NewReader(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(triples) != 2 {
+		t.Fatalf("expected 2 triples, got %d", len(triples))
+	}
+	if triples[1].Predicate != "http://example.org/items" {
+		t.Errorf("predicate = %q", triples[1].Predicate)
+	}
+	if triples[1].Object != "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil" {
+		t.Errorf("object = %q, want rdf:nil", triples[1].Object)
+	}
+}
+
+func TestTurtleParser_Collection(t *testing.T) {
+	input := `@prefix ex: <http://example.org/> . ex:foo ex:items (ex:a ex:b ex:c) .`
+	p := NewTurtleParser()
+	triples, err := p.Parse(strings.NewReader(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(triples) != 7 {
+		t.Fatalf("expected 7 triples (1 predicate + 3 rdf:first + 3 rdf:rest), got %d", len(triples))
+	}
+	var firstCount, restCount int
+	for _, tr := range triples {
+		if tr.Predicate == "http://www.w3.org/1999/02/22-rdf-syntax-ns#first" {
+			firstCount++
+		}
+		if tr.Predicate == "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest" {
+			restCount++
+		}
+	}
+	if firstCount != 3 {
+		t.Errorf("expected 3 rdf:first triples, got %d", firstCount)
+	}
+	if restCount != 3 {
+		t.Errorf("expected 3 rdf:rest triples, got %d", restCount)
+	}
+}
+
+func TestTurtleParser_CollectionInBlankNodeClassExpression(t *testing.T) {
+	input := `@prefix sai: <http://example.org/sai/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+sai:hasSpaceVersion
+    a owl:ObjectProperty ;
+    rdfs:domain [
+        a owl:Class ;
+        owl:unionOf (sai:Space sai:SpaceSession)
+    ] ;
+    rdfs:range sai:SpaceVersion .`
+	p := NewTurtleParser()
+	triples, err := p.Parse(strings.NewReader(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var domainTriple, unionOfTriple *types.Triple
+	for i := range triples {
+		if triples[i].Predicate == "http://www.w3.org/2000/01/rdf-schema#domain" {
+			domainTriple = &triples[i]
+		}
+		if triples[i].Predicate == "http://www.w3.org/2002/07/owl#unionOf" {
+			unionOfTriple = &triples[i]
+		}
+	}
+	if domainTriple == nil {
+		t.Fatal("missing domain triple")
+	}
+	if unionOfTriple == nil {
+		t.Fatal("missing owl:unionOf triple")
+	}
+	if !strings.HasPrefix(unionOfTriple.Object, "_:") {
+		t.Errorf("owl:unionOf object should be blank node, got %q", unionOfTriple.Object)
 	}
 }

@@ -442,6 +442,11 @@ func (s *turtleState) parseObject() (string, []types.Triple, error) {
 		return s.parseBlankNodePropertyList()
 	}
 
+	// RDF collection () syntax
+	if ch == '(' {
+		return s.parseCollection()
+	}
+
 	// Blank node _:label
 	if s.startsWith("_:") {
 		return s.readBlankNodeLabel(), nil, nil
@@ -539,6 +544,68 @@ func (s *turtleState) parseObjectList(subject, predicate string) ([]types.Triple
 	}
 
 	return triples, nil
+}
+
+func (s *turtleState) parseCollection() (string, []types.Triple, error) {
+	s.pos++ // consume '('
+	s.skipWS()
+
+	var triples []types.Triple
+	var items []string
+
+	for {
+		s.skipWS()
+		if s.pos >= len(s.input) {
+			return "", nil, fmt.Errorf("turtle: unterminated collection at pos %d", s.pos)
+		}
+
+		if s.input[s.pos] == ')' {
+			s.pos++ // consume ')'
+			break
+		}
+
+		item, itemTriples, err := s.parseObject()
+		if err != nil {
+			return "", nil, err
+		}
+		items = append(items, item)
+		triples = append(triples, itemTriples...)
+	}
+
+	if len(items) == 0 {
+		return types.RDFNil, nil, nil
+	}
+
+	var head string
+	for i := len(items) - 1; i >= 0; i-- {
+		bnode := s.newBlankNode()
+		triples = append(triples, types.Triple{
+			Subject:   bnode,
+			Predicate: types.RDFFirst,
+			Object:    items[i],
+			Graph:     s.graph,
+		})
+
+		if i == len(items)-1 {
+			triples = append(triples, types.Triple{
+				Subject:   bnode,
+				Predicate: types.RDFRest,
+				Object:    types.RDFNil,
+				Graph:     s.graph,
+			})
+		} else {
+			triples = append(triples, types.Triple{
+				Subject:   bnode,
+				Predicate: types.RDFRest,
+				Object:    head,
+				Graph:     s.graph,
+			})
+		}
+
+		head = bnode
+	}
+
+	return head, triples, nil
 }
 
 func (s *turtleState) parseBlankNodePropertyList() (string, []types.Triple, error) {

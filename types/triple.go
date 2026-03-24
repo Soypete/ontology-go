@@ -21,8 +21,11 @@
 package types
 
 const (
-	RDFNS   = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-	RDFType = RDFNS + "type"
+	RDFNS    = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	RDFType  = RDFNS + "type"
+	RDFFirst = RDFNS + "first"
+	RDFRest  = RDFNS + "rest"
+	RDFNil   = RDFNS + "nil"
 )
 
 // Triple represents an RDF triple with an optional named graph.

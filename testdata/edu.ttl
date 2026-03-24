@@ -81,3 +81,7 @@ _:union1 rdf:first edu:Student ;
 
 _:union2 rdf:first edu:Instructor ;
     rdf:rest rdf:nil .
+
+# Collection syntax (shorthand for the above)
+edu:Participant2 a owl:Class ;
+    owl:unionOf (edu:Student edu:Instructor) .
