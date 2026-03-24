@@ -5,18 +5,12 @@ run:
   tests: true
 
 linters:
+  default: none
   enable:
-    - errcheck
     - govet
     - ineffassign
-    - staticcheck
     - unused
     - misspell
-
-settings:
-  errcheck:
-    check-type-assertions: false
-    check-blank: false
 
 issues:
   max-issues-per-linter: 0

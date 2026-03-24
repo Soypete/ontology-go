@@ -62,5 +62,5 @@ jobs:
           CGO_ENABLED: 1
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.11
+          version: v2.11.0
           skip-cache: true
