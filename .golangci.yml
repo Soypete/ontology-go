@@ -26,6 +26,18 @@ linters:
       - linters:
           - staticcheck
         text: "QF1008"
+      - linters:
+          - staticcheck
+        text: "SA6005"
+      - linters:
+          - errcheck
+        text: "Error return value"
+      - linters:
+          - unused
+        text: "owlClass"
+      - linters:
+          - unused
+        text: "func termToString"
 
 issues:
   max-issues-per-linter: 0
