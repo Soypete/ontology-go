@@ -77,6 +77,7 @@ func (r *Reasoner) ClearRules() {
 	r.rules = nil
 }
 
+// OWLClassInfo represents an OWL class with its hierarchy information.
 type OWLClassInfo struct {
 	ID            string
 	IRI           string
@@ -84,11 +85,13 @@ type OWLClassInfo struct {
 	Label         string
 }
 
+// Ontology provides OWL class resolution and type hierarchy inference.
 type Ontology struct {
 	Classes map[string]*OWLClassInfo
 	Doc     *ttlast.Document
 }
 
+// LoadOntology loads OWL classes from Turtle files in the given directory.
 func LoadOntology(dir string) (*Ontology, error) {
 	ont := &Ontology{
 		Classes: make(map[string]*OWLClassInfo),
@@ -193,11 +196,13 @@ func (o *Ontology) resolveTerm(term ttlast.Term) string {
 	}
 }
 
+// ResolveClass returns the OWL class info for the given IRI.
 func (o *Ontology) ResolveClass(iri string) (*OWLClassInfo, bool) {
 	cls, ok := o.Classes[iri]
 	return cls, ok
 }
 
+// GetClassAncestors returns all ancestor classes (transitive closure of subClassOf).
 func (o *Ontology) GetClassAncestors(iri string) []OWLClassInfo {
 	visited := make(map[string]bool)
 	var ancestors []OWLClassInfo

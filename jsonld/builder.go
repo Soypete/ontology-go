@@ -7,6 +7,7 @@ import (
 	"github.com/soypete/ontology-go/reasoner"
 )
 
+// DefaultContext is the default JSON-LD @context with common RDF vocabulary prefixes.
 var DefaultContext = map[string]string{
 	"rdf":  "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
 	"rdfs": "http://www.w3.org/2000/01/rdf-schema#",
@@ -14,6 +15,7 @@ var DefaultContext = map[string]string{
 	"xsd":  "http://www.w3.org/2001/XMLSchema#",
 }
 
+// Vertex represents an entity in the JSON-LD graph.
 type Vertex struct {
 	ID         string          `json:"id"`
 	OWLClass   string          `json:"owl_class"`
@@ -22,6 +24,7 @@ type Vertex struct {
 	UpdatedAt  string          `json:"updated_at,omitempty"`
 }
 
+// Edge represents a relationship between two vertices.
 type Edge struct {
 	VertexIRI  string          `json:"vertex_iri"`
 	EdgeIRI    string          `json:"edge_iri"`
@@ -29,6 +32,7 @@ type Edge struct {
 	Properties json.RawMessage `json:"properties,omitempty"`
 }
 
+// Node represents a single entity in the JSON-LD @graph.
 type Node struct {
 	ID         string          `json:"@id"`
 	Type       []string        `json:"@type"`
@@ -37,6 +41,7 @@ type Node struct {
 	UpdatedAt  string          `json:"updated_at,omitempty"`
 }
 
+// EdgeNode represents a relationship in the JSON-LD @graph edges.
 type EdgeNode struct {
 	Vertex     string          `json:"vertex"`
 	Edge       string          `json:"edge"`
@@ -44,31 +49,37 @@ type EdgeNode struct {
 	Properties json.RawMessage `json:"properties,omitempty"`
 }
 
+// Response is the top-level JSON-LD envelope.
 type Response struct {
 	Context map[string]string `json:"@context"`
 	Graph   []Node            `json:"@graph"`
 	Edges   []EdgeNode        `json:"edges,omitempty"`
 }
 
+// Builder constructs JSON-LD responses from vertices and edges.
 type Builder struct {
 	prefixMap map[string]string
 	baseURL   string
 }
 
+// Option configures a Builder.
 type Option func(*Builder)
 
+// WithPrefixMap sets the prefix map for IRI expansion.
 func WithPrefixMap(m map[string]string) Option {
 	return func(b *Builder) {
 		b.prefixMap = m
 	}
 }
 
+// WithBaseURL sets the base URL for non-prefixed IRIs.
 func WithBaseURL(base string) Option {
 	return func(b *Builder) {
 		b.baseURL = base
 	}
 }
 
+// NewBuilder creates a new Builder with the given options.
 func NewBuilder(opts ...Option) *Builder {
 	b := &Builder{
 		prefixMap: make(map[string]string),
@@ -80,6 +91,7 @@ func NewBuilder(opts ...Option) *Builder {
 	return b
 }
 
+// Build constructs a JSON-LD response from vertices and edges.
 func (b *Builder) Build(vertices []Vertex, edges []Edge, ont *reasoner.Ontology) *Response {
 	type group struct {
 		seed    Vertex
@@ -165,6 +177,7 @@ func (b *Builder) unionExpandedTypes(classes []string, ont *reasoner.Ontology) [
 	return out
 }
 
+// ExpandCompactIRI expands a compact IRI to its full URL form.
 func (b *Builder) ExpandCompactIRI(iri string) string {
 	if strings.HasPrefix(iri, "http://") || strings.HasPrefix(iri, "https://") {
 		return iri
@@ -194,6 +207,7 @@ func (b *Builder) ExpandCompactIRI(iri string) string {
 	return base + local
 }
 
+// Build constructs a JSON-LD response from vertices and edges with optional configuration.
 func Build(vertices []Vertex, edges []Edge, ont *reasoner.Ontology, opts ...Option) *Response {
 	b := NewBuilder(opts...)
 	return b.Build(vertices, edges, ont)
