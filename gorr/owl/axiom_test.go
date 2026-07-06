@@ -277,24 +277,103 @@ func TestPropertyChainValidate(t *testing.T) {
 	}
 }
 
-func TestValidateAxioms(t *testing.T) {
-	ax := []Axiom{
-		&SubClassOf{
-			SubClass:   &Class{URI: "http://example.org/A"},
-			SuperClass: &Class{URI: "http://example.org/B"},
+func TestObjectPropertyRangeValidate(t *testing.T) {
+	tests := []struct {
+		name   string
+		axiom  *ObjectPropertyRange
+		wantOk bool
+	}{
+		{
+			name: "valid",
+			axiom: &ObjectPropertyRange{
+				Property: &ObjectProperty{URI: "http://example.org/p"},
+				Range:    &Class{URI: "http://example.org/Range"},
+			},
+			wantOk: true,
 		},
-		&SubClassOf{
-			SubClass:   nil,
-			SuperClass: &Class{URI: "http://example.org/B"},
+		{
+			name: "nil property",
+			axiom: &ObjectPropertyRange{
+				Property: nil,
+				Range:    &Class{URI: "http://example.org/Range"},
+			},
+			wantOk: false,
+		},
+		{
+			name: "nil range",
+			axiom: &ObjectPropertyRange{
+				Property: &ObjectProperty{URI: "http://example.org/p"},
+				Range:    nil,
+			},
+			wantOk: false,
 		},
 	}
 
-	warnings, ok := ValidateAxioms(ax)
-	if ok {
-		t.Error("ValidateAxioms should return false for invalid axioms")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, ok := tt.axiom.Validate()
+			if ok != tt.wantOk {
+				t.Errorf("Validate() ok = %v, want %v", ok, tt.wantOk)
+			}
+		})
 	}
-	if len(warnings) == 0 {
-		t.Error("ValidateAxioms should return warnings for invalid axioms")
+}
+
+func TestObjectPropertyDomainValidate(t *testing.T) {
+	tests := []struct {
+		name   string
+		axiom  *ObjectPropertyDomain
+		wantOk bool
+	}{
+		{
+			name: "valid",
+			axiom: &ObjectPropertyDomain{
+				Property: &ObjectProperty{URI: "http://example.org/p"},
+				Domain:   &Class{URI: "http://example.org/Domain"},
+			},
+			wantOk: true,
+		},
+		{
+			name: "nil property",
+			axiom: &ObjectPropertyDomain{
+				Property: nil,
+				Domain:   &Class{URI: "http://example.org/Domain"},
+			},
+			wantOk: false,
+		},
+		{
+			name: "nil domain",
+			axiom: &ObjectPropertyDomain{
+				Property: &ObjectProperty{URI: "http://example.org/p"},
+				Domain:   nil,
+			},
+			wantOk: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, ok := tt.axiom.Validate()
+			if ok != tt.wantOk {
+				t.Errorf("Validate() ok = %v, want %v", ok, tt.wantOk)
+			}
+		})
+	}
+}
+
+func TestValidateAxiom(t *testing.T) {
+	_, ok := ValidateAxiom(nil)
+	if ok {
+		t.Error("Expected ValidateAxiom(nil) to return false")
+	}
+
+	ax := &SubClassOf{
+		SubClass:   &Class{URI: "http://example.org/A"},
+		SuperClass: &Class{URI: "http://example.org/B"},
+	}
+	_, ok = ValidateAxiom(ax)
+	if !ok {
+		t.Error("Expected valid axiom to pass")
 	}
 }
 

@@ -74,8 +74,8 @@ func (idx *OntologyIndex) addAxiomUnlocked(ax owl.Axiom) {
 		subProp, _ := a.SubProperty.(*owl.ObjectProperty)
 		superProp, _ := a.SuperProperty.(*owl.ObjectProperty)
 		if subProp != nil && superProp != nil {
-			subHandle := idx.internUnlocked(string(subProp.URI))
-			superHandle := idx.internUnlocked(string(superProp.URI))
+			subHandle := idx.internObjectPropertyUnlocked(subProp)
+			superHandle := idx.internObjectPropertyUnlocked(superProp)
 			idx.addPropertySubsumptionUnlocked(subHandle, superHandle)
 		}
 

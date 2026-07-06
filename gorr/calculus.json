@@ -1,0 +1,50 @@
+{
+  "expr_kinds": [
+    {"name": "Class", "description": "Atomic class"},
+    {"name": "ObjectIntersectionOf", "arguments": ["a", "b"], "description": "Intersection of two class expressions"},
+    {"name": "ObjectUnionOf", "arguments": ["a", "b"], "description": "Union of two class expressions"},
+    {"name": "ObjectSomeValuesFrom", "arguments": ["property", "filler"], "description": "Existential restriction"},
+    {"name": "ObjectHasSelf", "arguments": ["property"], "description": "Self restriction"},
+    {"name": "ObjectOneOf", "arguments": ["individuals"], "description": "Enumeration of individuals"},
+    {"name": "ObjectProperty", "description": "Object property"},
+    {"name": "DataProperty", "description": "Data property"},
+    {"name": "InverseObjectProperty", "arguments": ["property"], "description": "Inverse property"}
+  ],
+  "conclusion_kinds": [
+    {"name": "SubsumerC", "description": "Composed subsumer (forward link derived)"},
+    {"name": "SubsumerD", "description": "Decomposed subsumer (direct link)"},
+    {"name": "ForwardLink", "description": "Forward link: root ->property target"},
+    {"name": "BackwardLink", "description": "Backward link: root <-property source"},
+    {"name": "Disjointness", "description": "Disjointness conclusion"},
+    {"name": "Propagation", "description": "Existential propagation"},
+    {"name": "Inconsistency", "description": "owl:Nothing derived"}
+  ],
+  "inference_types": [
+    {"name": "ToldSubsumption", "conclusion": "SubsumerD", "premises": ["ToldAxiom"]},
+    {"name": "ConjunctionDecomposition", "conclusion": "SubsumerD", "premises": ["SubsumerC"]},
+    {"name": "ConjunctionComposition", "conclusion": "SubsumerC", "premises": ["SubsumerD", "SubsumerD"]},
+    {"name": "ExistentialDecomposition", "conclusion": "ForwardLink", "premises": ["SubsumerC"]},
+    {"name": "ExistentialComposition", "conclusion": "SubsumerC", "premises": ["BackwardLink", "SubsumerD"]},
+    {"name": "RoleHierarchy", "conclusion": "ForwardLink", "premises": ["ForwardLink", "ToldAxiom"]},
+    {"name": "RoleChain", "conclusion": "ForwardLink", "premises": ["ForwardLink", "ForwardLink", "ToldAxiom"]},
+    {"name": "DisjointInference", "conclusion": "Inconsistency", "premises": ["SubsumerD", "SubsumerD"]},
+    {"name": "SelfInference", "conclusion": "ForwardLink", "premises": ["SubsumerC"]},
+    {"name": "RangeInference", "conclusion": "SubsumerD", "premises": ["ForwardLink", "ToldAxiom"]},
+    {"name": "AxiomConversion", "conclusion": "SubsumerD", "premises": ["ToldAxiom"]}
+  ],
+  "rules": [
+    {"name": "Init", "number": 1, "conclusion": "SubsumerC", "premises": "root"},
+    {"name": "InitTop", "number": 2, "conclusion": "SubsumerC", "premises": "top"},
+    {"name": "ToldExpansion", "number": 3, "conclusion": "SubsumerC", "premises": "SubsumerD + Told"},
+    {"name": "ConjunctionDecomposition", "number": 4, "conclusion": "SubsumerD", "premises": "SubsumerC(∧)"},
+    {"name": "ConjunctionComposition", "number": 5, "conclusion": "SubsumerC", "premises": "SubsumerD + SubsumerD(∧neg)"},
+    {"name": "ExistentialDecomposition", "number": 6, "conclusion": "ForwardLink", "premises": "SubsumerC(∃)"},
+    {"name": "ExistentialComposition", "number": 7, "conclusion": "SubsumerC", "premises": "SubsumerD + BackwardLink + ∃(neg)"},
+    {"name": "RoleHierarchy", "number": 8, "conclusion": "ForwardLink", "premises": "ForwardLink + Told(prop⊑)"},
+    {"name": "RoleChain", "number": 9, "conclusion": "ForwardLink", "premises": "ForwardLink + ForwardLink + Chain(⊑)"},
+    {"name": "Bottom", "number": 10, "conclusion": "Inconsistency", "premises": "SubsumerD(⊥)"},
+    {"name": "Disjointness", "number": 11, "conclusion": "Inconsistency", "premises": "SubsumerD + SubsumerD + Disjoint"},
+    {"name": "HasSelf", "number": 12, "conclusion": "ForwardLink", "premises": "SubsumerC(Self)"},
+    {"name": "Range", "number": 13, "conclusion": "SubsumerD", "premises": "ForwardLink + Range"}
+  ]
+}

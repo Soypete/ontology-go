@@ -182,6 +182,46 @@ func TestParserPropertyRange(t *testing.T) {
 	}
 }
 
+func TestParserPropertyChain(t *testing.T) {
+	p := NewParser()
+
+	triples := []types.Triple{
+		{Subject: "http://example.org/r", Predicate: string(OWLPropertyChain), Object: "http://example.org/p"},
+	}
+
+	axioms, err := p.ParseTriples(triples)
+	if err != nil {
+		t.Fatalf("ParseTriples() error = %v", err)
+	}
+
+	ua, ok := axioms[0].(*UnsupportedAxiom)
+	if !ok {
+		t.Fatalf("Expected UnsupportedAxiom for property chain, got %T", axioms[0])
+	}
+
+	if ua.OriginalType != "owl:propertyChainAxiom" {
+		t.Errorf("OriginalType = %v, want owl:propertyChainAxiom", ua.OriginalType)
+	}
+}
+
+func TestParserClassExpression(t *testing.T) {
+	p := NewParser()
+
+	expr := p.ParseClassExpression("http://example.org/A")
+	if expr.String() != "http://example.org/A" {
+		t.Errorf("Expected http://example.org/A, got %s", expr.String())
+	}
+}
+
+func TestParserObjectProperty(t *testing.T) {
+	p := NewParser()
+
+	prop := p.ParseObjectProperty("http://example.org/p")
+	if prop.URI != "http://example.org/p" {
+		t.Errorf("Expected http://example.org/p, got %s", prop.URI)
+	}
+}
+
 func TestParserUnsupportedAxiom(t *testing.T) {
 	p := NewParser()
 

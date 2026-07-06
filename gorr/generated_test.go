@@ -11,12 +11,19 @@ func TestExprKindString(t *testing.T) {
 	}{
 		{ExprClass, "Class"},
 		{ExprObjectIntersectionOf, "ObjectIntersectionOf"},
+		{ExprObjectUnionOf, "ObjectUnionOf"},
 		{ExprObjectSomeValuesFrom, "ObjectSomeValuesFrom"},
+		{ExprObjectHasSelf, "ObjectHasSelf"},
+		{ExprObjectOneOf, "ObjectOneOf"},
 		{ExprObjectProperty, "ObjectProperty"},
+		{ExprDataProperty, "DataProperty"},
+		{ExprInverseObjectProperty, "InverseObjectProperty"},
+		{100, "Unknown"},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.expected, func(t *testing.T) {
+		name := tt.expected
+		t.Run(name, func(t *testing.T) {
 			if got := tt.kind.String(); got != tt.expected {
 				t.Errorf("ExprKind.String() = %v, want %v", got, tt.expected)
 			}

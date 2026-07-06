@@ -148,4 +148,47 @@ func TestSaturationEngineIsEntailed(t *testing.T) {
 	if !engine.IsEntailed(aHandle, thingHandle, cHandle) {
 		t.Error("Expected A ⊑ C to be entailed (transitive)")
 	}
+
+	unknownHandle := index.intern("http://example.org/Unknown")
+	if engine.IsEntailed(aHandle, thingHandle, unknownHandle) {
+		t.Error("Expected A ⊑ Unknown to NOT be entailed")
+	}
+}
+
+func TestSaturationEngineWithLogger(t *testing.T) {
+	index := NewOntologyIndex()
+
+	index.AddAxiom(&owl.SubClassOf{
+		SubClass:   &owl.Class{URI: "http://example.org/A"},
+		SuperClass: &owl.Class{URI: "http://example.org/B"},
+	})
+
+	engine := NewSaturationEngine(index, WithLogger(nil))
+
+	err := engine.Saturation(context.Background())
+	if err != nil {
+		t.Fatalf("Saturation() error = %v", err)
+	}
+}
+
+func TestSaturationEngineGetContext(t *testing.T) {
+	index := NewOntologyIndex()
+
+	index.AddAxiom(&owl.SubClassOf{
+		SubClass:   &owl.Class{URI: "http://example.org/A"},
+		SuperClass: &owl.Class{URI: "http://example.org/B"},
+	})
+
+	engine := NewSaturationEngine(index)
+
+	err := engine.Saturation(context.Background())
+	if err != nil {
+		t.Fatalf("Saturation() error = %v", err)
+	}
+
+	aHandle := index.intern("http://example.org/A")
+	ctx := engine.GetContext(aHandle)
+	if ctx == nil {
+		t.Error("Expected non-nil context for A")
+	}
 }

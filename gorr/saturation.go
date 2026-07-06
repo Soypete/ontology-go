@@ -17,7 +17,9 @@ type SaturationOption func(*SaturationEngine)
 
 func WithLogger(logger *slog.Logger) SaturationOption {
 	return func(e *SaturationEngine) {
-		e.logger = logger
+		if logger != nil {
+			e.logger = logger
+		}
 	}
 }
 
