@@ -8,10 +8,9 @@ import (
 )
 
 type SaturationEngine struct {
-	index   *OntologyIndex
-	ctxs    map[Handle]*Context
-	logger  *slog.Logger
-	workers int
+	index  *OntologyIndex
+	ctxs   map[Handle]*Context
+	logger *slog.Logger
 }
 
 type SaturationOption func(*SaturationEngine)
@@ -22,18 +21,11 @@ func WithLogger(logger *slog.Logger) SaturationOption {
 	}
 }
 
-func WithWorkers(workers int) SaturationOption {
-	return func(e *SaturationEngine) {
-		e.workers = workers
-	}
-}
-
 func NewSaturationEngine(index *OntologyIndex, opts ...SaturationOption) *SaturationEngine {
 	e := &SaturationEngine{
-		index:   index,
-		ctxs:    make(map[Handle]*Context),
-		workers: 4,
-		logger:  slog.Default(),
+		index:  index,
+		ctxs:   make(map[Handle]*Context),
+		logger: slog.Default(),
 	}
 	for _, opt := range opts {
 		opt(e)
@@ -46,30 +38,7 @@ func (e *SaturationEngine) Saturation(ctx context.Context) error {
 
 	e.logger.Info("starting saturation", "classes", e.index.ClassCount())
 
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
-		anyProgress := false
-
-		for root, ctx := range e.ctxs {
-			if !ctx.Saturated {
-				progress := e.processContext(ctx, root)
-				if progress {
-					anyProgress = true
-				} else {
-					ctx.Saturated = true
-				}
-			}
-		}
-
-		if !anyProgress {
-			break
-		}
-	}
+	e.saturateAll()
 
 	totalConcs := 0
 	for _, ctx := range e.ctxs {
@@ -90,18 +59,7 @@ func (e *SaturationEngine) initialize() {
 			subHandle := e.index.internClass(a.SubClass)
 			superHandle := e.index.internClass(a.SuperClass)
 
-			ctx := e.getOrCreateContext(subHandle)
-			ctx.AddSubsumerD(superHandle)
-			ctx.PushTodo(Conclusion{
-				Kind:   ConclusionSubsumerD,
-				Root:   subHandle,
-				Target: superHandle,
-			})
-
-			if subHandle != superHandle {
-				ctx2 := e.getOrCreateContext(superHandle)
-				ctx2.AddSubsumerC(subHandle)
-			}
+			e.getOrCreateContext(subHandle).AddSubsumerD(superHandle)
 		}
 	}
 }
@@ -115,107 +73,50 @@ func (e *SaturationEngine) getOrCreateContext(root Handle) *Context {
 	return ctx
 }
 
-func (e *SaturationEngine) processContext(ctx *Context, root Handle) bool {
-	progress := false
-
-	for !ctx.TodoEmpty() {
-		conclusion := ctx.PopTodo()
-
-		switch conclusion.Kind {
-		case ConclusionSubsumerD:
-			if e.applySubsumerDRules(ctx, root, conclusion) {
-				progress = true
-			}
-		case ConclusionSubsumerC:
-			if e.applySubsumerCRules(ctx, root, conclusion) {
-				progress = true
+func (e *SaturationEngine) saturateAll() {
+	changed := true
+	for changed {
+		changed = false
+		for root := range e.ctxs {
+			ctx := e.ctxs[root]
+			if e.saturateContext(ctx, root) {
+				changed = true
 			}
 		}
 	}
-
-	ctx.Saturated = true
-	return progress
 }
 
-func (e *SaturationEngine) applySubsumerCRules(ctx *Context, root Handle, concl Conclusion) bool {
-	progress := false
+func (e *SaturationEngine) saturateContext(ctx *Context, root Handle) bool {
+	changed := false
 
-	subsumers := e.index.GetSubsumers(concl.Target)
-	subsumers.Iterate(func(super Handle) {
-		if ctx.AddSubsumerD(super) {
-			ctx.PushTodo(Conclusion{
-				Kind:   ConclusionSubsumerD,
-				Root:   root,
-				Target: super,
-			})
-			progress = true
+	allSubsumers := make([]Handle, 0, 32)
+	ctx.SubsumersD.Iterate(func(h Handle) {
+		allSubsumers = append(allSubsumers, h)
+	})
 
-			ctx2 := e.getOrCreateContext(super)
-			if ctx2.AddSubsumerC(root) {
-				ctx2.PushTodo(Conclusion{
-					Kind:   ConclusionSubsumerC,
-					Root:   super,
-					Target: root,
-				})
+	for _, target := range allSubsumers {
+		subsumers := e.index.GetSubsumers(target)
+		subsumers.Iterate(func(super Handle) {
+			if ctx.AddSubsumerD(super) {
+				changed = true
+			}
+			e.getOrCreateContext(super).AddSubsumerC(root)
+		})
+
+		if domain, ok := e.index.GetPropertyDomain(target); ok {
+			if ctx.AddSubsumerC(domain) {
+				changed = true
 			}
 		}
-	})
 
-	domain, ok := e.index.GetPropertyDomain(concl.Target)
-	if ok {
-		if ctx.AddSubsumerC(domain) {
-			ctx.PushTodo(Conclusion{
-				Kind:   ConclusionSubsumerC,
-				Root:   root,
-				Target: domain,
-			})
-			progress = true
+		if rng, ok := e.index.GetPropertyRange(target); ok {
+			if ctx.AddSubsumerC(rng) {
+				changed = true
+			}
 		}
 	}
 
-	return progress
-}
-
-func (e *SaturationEngine) applySubsumerDRules(ctx *Context, root Handle, concl Conclusion) bool {
-	progress := false
-
-	domain, ok := e.index.GetPropertyDomain(concl.Target)
-	if ok {
-		if ctx.AddSubsumerC(domain) {
-			ctx.PushTodo(Conclusion{
-				Kind:   ConclusionSubsumerC,
-				Root:   root,
-				Target: domain,
-			})
-			progress = true
-		}
-	}
-
-	rng, ok := e.index.GetPropertyRange(concl.Target)
-	if ok {
-		if ctx.AddSubsumerC(rng) {
-			ctx.PushTodo(Conclusion{
-				Kind:   ConclusionSubsumerC,
-				Root:   root,
-				Target: rng,
-			})
-			progress = true
-		}
-	}
-
-	propSubsumers := e.index.GetPropertySubsumers(concl.Target)
-	propSubsumers.Iterate(func(prop Handle) {
-		if ctx.AddForwardLink(concl.Target, prop) {
-			ctx.PushTodo(Conclusion{
-				Kind:   ConclusionForwardLink,
-				Root:   root,
-				Target: prop,
-			})
-			progress = true
-		}
-	})
-
-	return progress
+	return changed
 }
 
 func (e *SaturationEngine) GetContext(root Handle) *Context {
@@ -229,7 +130,7 @@ func (e *SaturationEngine) IsEntailed(subj, pred, obj Handle) bool {
 	}
 
 	switch pred {
-	case Handle(1): // rdfs:subClassOf
+	case Handle(1):
 		return ctx.HasSubsumerD(obj) || ctx.HasSubsumerC(obj)
 	}
 	return false
