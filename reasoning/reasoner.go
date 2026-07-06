@@ -1,5 +1,10 @@
 // Package reasoning provides OWL reasoning capabilities for RDF ontologies.
 //
+// Deprecated: Use the gorr package instead. This package provides limited
+// 2-hop inference and will be removed in a future release.
+// The gorr package provides a full OWL 2 EL consequence-based reasoner with
+// incremental reasoning, proof generation, and concurrent saturation.
+//
 // This package supports loading TBox (schema) and ABox (instance) data,
 // performing inference to derive implicit relationships, and supporting
 // up to 2-hop node traversal inference.

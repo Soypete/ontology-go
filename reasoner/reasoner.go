@@ -1,3 +1,14 @@
+// Package reasoner provides inference over SKOS thesaurus hierarchies.
+//
+// Deprecated: Use the gorr package instead. This package provides SKOS-specific
+// transitive closure reasoning and will be removed in a future release.
+// The gorr package provides a full OWL 2 EL consequence-based reasoner with
+// incremental reasoning, proof generation, and concurrent saturation.
+//
+// Example migration:
+//
+//	Old: reasoner.New(doc, hierarchy)
+//	New: gorr.NewReasoner(ctx, gorr.WithSource(doc))
 package reasoner
 
 import (
