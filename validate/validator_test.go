@@ -236,6 +236,76 @@ func TestValidator_checkCircularBroader(t *testing.T) {
 	}
 }
 
+func TestValidator_checkInconsistentHierarchy(t *testing.T) {
+	tests := []struct {
+		name           string
+		triples        []types.Triple
+		wantIssueTypes []IssueType
+	}{
+		{
+			name: "concept both broader and narrower than the same concept",
+			triples: []types.Triple{
+				{Subject: "ex:a", Predicate: RDFType, Object: SKOSConcept},
+				{Subject: "ex:a", Predicate: SKOSPrefLabel, Object: "A@en"},
+				{Subject: "ex:a", Predicate: SKOSBroader, Object: "ex:b"},
+				{Subject: "ex:a", Predicate: SKOSNarrower, Object: "ex:b"},
+				{Subject: "ex:b", Predicate: RDFType, Object: SKOSConcept},
+				{Subject: "ex:b", Predicate: SKOSPrefLabel, Object: "B@en"},
+			},
+			wantIssueTypes: []IssueType{IssueInconsistentHierarchy},
+		},
+		{
+			name: "transitively broader while directly narrower",
+			triples: []types.Triple{
+				{Subject: "ex:a", Predicate: RDFType, Object: SKOSConcept},
+				{Subject: "ex:a", Predicate: SKOSPrefLabel, Object: "A@en"},
+				{Subject: "ex:a", Predicate: SKOSBroader, Object: "ex:b"},
+				{Subject: "ex:a", Predicate: SKOSNarrower, Object: "ex:c"},
+				{Subject: "ex:b", Predicate: RDFType, Object: SKOSConcept},
+				{Subject: "ex:b", Predicate: SKOSPrefLabel, Object: "B@en"},
+				{Subject: "ex:b", Predicate: SKOSBroader, Object: "ex:c"},
+				{Subject: "ex:c", Predicate: RDFType, Object: SKOSConcept},
+				{Subject: "ex:c", Predicate: SKOSPrefLabel, Object: "C@en"},
+			},
+			wantIssueTypes: []IssueType{IssueInconsistentHierarchy},
+		},
+		{
+			name: "inverse pair is consistent and must not be flagged",
+			triples: []types.Triple{
+				{Subject: "ex:course", Predicate: RDFType, Object: SKOSConcept},
+				{Subject: "ex:course", Predicate: SKOSPrefLabel, Object: "Course@en"},
+				{Subject: "ex:course", Predicate: SKOSNarrower, Object: "ex:onlineCourse"},
+				{Subject: "ex:onlineCourse", Predicate: RDFType, Object: SKOSConcept},
+				{Subject: "ex:onlineCourse", Predicate: SKOSPrefLabel, Object: "Online Course@en"},
+				{Subject: "ex:onlineCourse", Predicate: SKOSBroader, Object: "ex:course"},
+			},
+			wantIssueTypes: []IssueType{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := NewValidator(tt.triples)
+			var issues []Issue
+			v.checkInconsistentHierarchy(&issues)
+
+			if len(issues) != len(tt.wantIssueTypes) {
+				t.Fatalf("expected %d issues, got %d: %+v", len(tt.wantIssueTypes), len(issues), issues)
+			}
+			found := make(map[IssueType]int)
+			for _, issue := range issues {
+				found[issue.Type]++
+			}
+			for _, want := range tt.wantIssueTypes {
+				if found[want] <= 0 {
+					t.Errorf("expected issue type %v, but it was not found", want)
+				}
+				found[want]--
+			}
+		})
+	}
+}
+
 func TestValidator_checkConsistencyQuality(t *testing.T) {
 	tests := []struct {
 		name           string
