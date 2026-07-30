@@ -343,9 +343,15 @@ func (v *Validator) detectCycle(subject string, path map[string]bool, visited ma
 }
 
 func (v *Validator) checkInconsistentHierarchy(issues *[]Issue) {
+	// A subject declaring `skos:narrower N` is broader than N. That is
+	// inconsistent only if the subject ALSO has a skos:broader path to N
+	// (i.e. it is narrower than N at the same time). The inverse pair —
+	// subject skos:narrower N alongside N skos:broader subject — is the
+	// normal, consistent way to declare both directions and must not be
+	// flagged.
 	for subject, narrowers := range v.narrowerMap {
 		for _, narrower := range narrowers {
-			if v.hasBroaderRelation(narrower, subject) {
+			if v.hasBroaderRelation(subject, narrower) {
 				*issues = append(*issues, Issue{
 					Type:       IssueInconsistentHierarchy,
 					Severity:   SeverityError,
